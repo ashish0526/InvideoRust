@@ -1,13 +1,17 @@
-# Use a Rust image with wasm-pack pre-installed
-FROM rustwasm/wasm-pack:1.82.0 as rust-builder
-WORKDIR /usr/src
-RUN rustup target add wasm32-unknown-unknown
+# Build the frontend
+FROM node:20-alpine as frontend-builder
+WORKDIR /app
 
-# Build the WebAssembly package
-WORKDIR /usr/src/calculator_wasm
-COPY calculator_wasm/Cargo.toml calculator_wasm/Cargo.lock ./
-COPY calculator_wasm/src ./src
-RUN wasm-pack build --target web --release
+# Copy the built wasm package from local filesystem
+COPY calculator_wasm/pkg ./node_modules/calculator_wasm
+
+# Install frontend dependencies
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm install
+
+# Copy frontend source and build
+COPY frontend .
+RUN npm run build
 
 # Build the frontend
 FROM node:20-alpine as frontend-builder
